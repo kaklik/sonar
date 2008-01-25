@@ -1,0 +1,30 @@
+#!/bin/bash
+
+file=$1
+t1=$2
+t2=$3
+
+[ "$t1" = "" ] && t1=0
+[ "$t2" = "" ] && t2=86400
+
+awk -v "t1=$t1"  -v "t2=$t2" '{
+   $1 %= 86400
+   if( $1 < t1) next
+   if( $1 > t2) exit
+   print
+}' $file > /tmp/nplot.$$
+
+echo "
+ set style data lines
+ set terminal png
+ set xlabel 'UT Seconds'
+ set size 1.4,0.6
+ set xrange [$t1:$t2]
+ set key outside below
+ plot '/tmp/nplot.$$' using (\$1):(\$5/2) title 'Anthorn',\
+      '' using (\$1):(\$6/2) title 'Skelton',\
+      '' using (\$1):(\$7*2) title 'Burlage',\
+      '' using (\$1):(\$4) title 'Le Blanc',\
+      '' using (\$1):(\$8*2) title 'Tavolara'
+
+ " | gnuplot

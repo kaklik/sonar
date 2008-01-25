@@ -1,0 +1,155 @@
+Installation and setup notes for sidd-0.93, 15th March 2005.
+------------------------------------------------------------
+
+You have unpacked the tgz file and have 3 files:-
+
+ * README - this one
+ * sidd.c - source code
+ * sidd.conf - a sample configuration file.
+
+Installation steps
+------------------
+* 1/
+You will need FFTW3 from www.fftw.org, if not already installed.
+
+* 2/
+Compile the sidd source with
+
+ gcc -Wall -O4 -ffast-math -DPENTIUM -Wall -o sidd sidd.c -lfftw3 -lm
+
+which produces an executable sidd in the current directory.
+
+* 3/
+Edit sidd.conf to suit your requirements.
+
+* 4/
+Start sidd in verbose foreground mode with the command
+
+ ./sidd -vf
+
+* 5/
+Examine the log file - it should look something like
+
+ 2005/03/15 20:03:17 logfile /root/sidd.log
+ 2005/03/15 20:03:17 los threshold 0.060, timeout 5 seconds
+ 2005/03/15 20:03:17 band LB 18200 18400
+ 2005/03/15 20:03:17 band AN 19480 19680
+ 2005/03/15 20:03:17 band SK 22050 22150
+ 2005/03/15 20:03:17 band BG 23300 23500
+ 2005/03/15 20:03:17 band TV 20190 20340
+ 2005/03/15 20:03:17 band NV 16300 16500
+ 2005/03/15 20:03:17 band B1 20800 21000
+ 2005/03/15 20:03:17 band B2 22650 22850
+ 2005/03/15 20:03:17 requesting line input gains left=77 right=100
+ 2005/03/15 20:03:17 line input gains set to: left=77 right=100
+ 2005/03/15 20:03:17 taking data from [/dev/dsp]
+ 2005/03/15 20:03:17 requesting rate 48000
+ 2005/03/15 20:03:17 actual rate set: 48662 samples/sec
+ 2005/03/15 20:03:17 soundcard channels: 1  bits: 16
+ 2005/03/15 20:03:17 resolution: bins=2048 fftwid=4096 df=11.880371
+ 2005/03/15 20:03:17 spectrum file: /tmp/sidspec
+ 2005/03/15 20:03:17 using SCHED_FIFO priority 1
+ 2005/03/15 20:03:17 sidd version 0.93: starting work
+ 2005/03/15 20:03:17 using output file [./050315.dat]
+
+* 6/
+Now tail the output file (in my example, ./050315.dat).  The first
+three columns are the timestamp (seconds from 01/01/1970), peak signal
+level (range 0 to 1), and rms signal level (also range 0 to 1).
+
+Adjust your mixer gain settings so that the peak hovers around the
+range 0.1 to 0.5 (the rms will be around 1/2 or 1/3 of the peak, depending
+on your level of impulsive noise and sferics).
+
+* 7/ 
+Plot the spectrum file, in my case /tmp/sidspec. This file is two columns,
+bin centre frequency in Hz, and relative power.  The file is re-written by
+sidd every 10 seconds or so, depending on your sidd.conf settings.  Adjust
+antennas, receivers, etc to obtain desired signal to noise ratios.  You
+may want to reconsider the band settings in sidd.conf at this point too.
+
+* 8/
+Once you're happy with the gain settings, stop sidd and run it again with
+the command
+
+ ./sidd -m
+
+This will read and display the applicable mixer gain settings.  Now edit
+your sidd.conf, commenting in the gain commands and putting in your gain
+settings.   Then, whenever sidd starts, it will setup the mixer with these
+settings.  All mixers will have a line input gain control, but only some
+will have an overall input gain control and/or a record level control.  
+The -m option will report what you need to put in the config file.
+
+* 9/ 
+Set your PC clock and activate your favourite time synchronisation 
+software.  Make sure it slews the clock rather than stepping the time.
+
+* 10/
+Restart sidd in background with
+
+  ./sidd -v
+
+Inspect the log file to make sure your mixer settings have been applied.
+
+* 11/
+After a period of time, plot some of the data from the output file.
+Output file columns 4 onwards correspond to the 'band' commands in the
+order they appear in sidd.conf.   Each column is a total relative power,
+so you will need to apply a square root function during plotting if you
+want to display relative amplitudes.
+
+* 12/
+After a midnight crossing, make sure sidd has switched to the next
+output file.
+
+Command line options
+--------------------
+There are just a few command line options - most controls are
+in the config file. 
+
+ -v    Be a little more verbose with log messages.
+ -f    Run in foreground.  By default, sidd detaches from the process
+       group and terminal and becomes a daemon.  In foreground mode,
+       log messages are duplicated to stderr.
+ -m    Interrogate the soundcard mixer and report settings, then exit.
+       This option overrides any others.
+
+Miscellaneous notes
+-------------------
+*
+sidd will set the soundcard to the nearest available sample rate to that
+specified in sidd.conf
+
+*
+Make sure you have enough disk space.   The example sidd.conf with 8 bands
+generates files of about 100Mbytes per day, which compress down to about 
+30Mbytes.    Arrange scripts for plotting.  Arrange scripts for compressing
+and archiving files that are a few days old.
+
+*
+You can specify an ordinary file or a pipe as the input 'device' instead
+of /dev/dsp.  In this case, you must set the sample rate in sidd.conf 
+to whatever the actual sample rate is.  sidd is looking for unsigned bytes
+in 8 bit mode, or signed words in 16 bit mode.
+
+*
+Once sidd has started up and set the mixer gains, it no longer takes any
+notice of the mixer.  Therefore once sidd is running, a rogue user can
+mess things up by twiddling the mixer settings with Xmixer or some other
+utility.  Kill off any mixer control panels to avoid the risk of any upset.
+
+*
+If your PC is set to autoboot after a power outage, you might want to put
+a startup command for sidd into /etc/rc.d/rc.local or similar - but make
+sure the RTC setting commands are done first.
+
+Revisions
+---------
+v0.9: Original.
+v0.91: Fixes a header file problem with some gcc.
+       No longer produces a static binary.
+v0.93: Another bug fixed.
+       Added control of mixer input and gains.
+       Added stereo mode to make a 2 channel monitor. 
+
