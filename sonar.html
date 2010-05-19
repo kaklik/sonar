@@ -39,16 +39,23 @@
 <h1>Jednoduchý sonar ze zvukovky<br/>Jakub Kákona (kaklik@mlab.cz)</h1>
 
 <p>
-Program je demonstrací základních funkcí zvukového systému ALSA <a href="http://www.alsa-project.org/">http://www.alsa-project.org/</a>. Konkrétně je ukázkou přístupu k zařízení Playback a Capture.
+Program je demonstrací základních funkcí audio systému ALSA <a href="http://www.alsa-project.org/">http://www.alsa-project.org/</a>. Konkrétně je ukázkou přístupu k zařízení Playback a Capture. A zároveň jednoduchým prostředkem k prozkoumání akustických vlastností různých materiálů pouze pomocí svého počítače. :) 
 </p>
 
 <img src="podlaha.png" alt="Obrázek aktivního sonaru"/>
 
 <h2>Závislosti</h2>
-<ul><li>Alsalib</li></ul>
+<p>
+Program je napsán pro OS Linux a testován byl konkrétně na Ubuntu.
+</p>
+
+<ul>
+<li>Linux</li>
+<li>libasound2</li>
+</ul>
 
 <p>
-K přeložení programu je tedy nutné mít nainstalované vývojové knihovny ALSA (alsalib-dev). Pokud máme splněné všechny závislosti, tak lze program přeložit pomocí gcc s následujícími parametry:
+K přeložení programu je tedy nutné mít nainstalované vývojové knihovny ALSA (libasound2-dev). Pokud máme splněné všechny závislosti, tak lze program přeložit pomocí gcc s následujícími parametry:
 </p>
 
 <pre><code>
@@ -62,12 +69,22 @@ K funkci program využije mono reproduktorový výstup. A vstup stereofonního m
 
 <h2>Výstup</h2>
 <p>
-Navzorkovaná a vypočtená data jsou ukládána do textových souborů v adresáři /tmp/ ze kterého je pak možné je vykreslovat pomocí <a href="plot.gp">skriptu</a> Gnuplotu
+Navzorkovaná a vypočtená data jsou ukládána do textových souborů v adresáři /tmp/ ze kterého je pak možné je vykreslovat pomocí <a href="plot.gp">skriptu</a> Gnuplotu.
+V horní části grafu je vysílaný signál. Uprostřed signál navzorkovaný mikrofony a dole výstup po korelaci nasnímaného signálu s odeslaným.
+</p>
+
+<pre><code>
+~#gnuplot
+> load "plot.gp"
+</code></pre>
+
+<p>
+Skrip si sám cyklicky spouští program "sonar" a překresluje graf. Lze tak experimentovat s odrazy od různých překážek a třeba i pokračovat ve vývoji kódu.
 </p>
 
 <h2>Zpracování dat</h2>
 <p>
-Na závěr se s každým navzorkovaným polem dat z mikrofonů pomocí algoritmu <a href="http://en.wikipedia.org/wiki/Cross-correlation">křížové korelace</a> porovnají snímané signály vůči původnímu odeslanému pingu. Tím jsou v signálu velice zvýrazněna odražená echa. Celý algoritmus jsou následující dva cykly:
+Zpracovaní používá pouze metodu <a href="http://en.wikipedia.org/wiki/Cross-correlation">křížové korelace</a> kterou se porovnají snímané signály vůči původnímu odeslanému pingu. Tím jsou ve výsledku velice zvýrazněna odražená echa. Celý algoritmus jsou následující dva cykly:
 </p>
 
 <pre><code>
