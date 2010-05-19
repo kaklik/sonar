@@ -189,22 +189,22 @@ unsigned int linear_windowed_chirp(short *pole)  // generate the ping signal
     for (n=0;n<=chirp_samples;n++)
     {
         t = (double) n / (double)rate;
-        pole[n] = (short) floor( (0.35875 - 0.48829*cos(2*M_PI*t*1/Tw) + 0.14128*cos(2*M_PI*2*t*1/Tw) - 0.01168*cos(2*M_PI*3*t*1/Tw))*maxval*sin(2*M_PI*(t)*(f0+(k/2)*(t))) ); // signal generation formula
+        pole[n] = (short) floor( (0.35875 - 0.48829*cos(2*M_PI*t*1/Tw) + 0.14128*cos(2*M_PI*2*t*1/Tw) - 0.01168*cos(2*M_PI*3*t*1/Tw))*maxval*sin(2*M_PI*(t)*(f0+(k/2)*(t))) ); // ping signal generation formula
     }
     return (chirp_samples);	// return count of samples in ping
 }
 
 int main(int argc, char *argv[])
 {
-    snd_pcm_t *playback_handle, *capture_handle;
+    snd_pcm_t *playback_handle, *capture_handle;		//variables for driver handlers
     int err;
-    snd_pcm_hw_params_t *hwparams;
+    snd_pcm_hw_params_t *hwparams;		// hardware and software parameters arrays
     snd_pcm_sw_params_t *swparams;
 
-    long int *correlationl, *correlationr;
+    long int *correlationl, *correlationr;	// pointers to arrays where correlation will be stored
     float k;
-    int *L_signal, *R_signal;
-    short *chirp, *signal;
+    int *L_signal, *R_signal;	// array of captured data from left and right channel
+    short *chirp, *signal;	// chirp and soundcard buffer output data
     unsigned int i,j,m,n;
     unsigned int map_size; //number of points in echo map.
     long int l,r;  // store correlation at strict time
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
     else printf("Transmitting all samples of chirp\n");
 //--------------
 
-    while ( snd_pcm_avail_update(capture_handle) < period_size)			// wait for one period of data
+    while ( snd_pcm_avail_update(capture_handle) < period_size)			// wait until one period of data is transmitted
     {
         usleep(1000);
         printf(".");
@@ -340,14 +340,14 @@ int main(int argc, char *argv[])
     }
 
     printf("Writing output files\n");
-    out=fopen("/tmp/sonar.txt","w");
+    out=fopen("/tmp/sonar.txt","w");		// save captured and computed correlation data for both channels
     for (i=0; i <= (period_size - 1); i++)
     {
         fprintf(out,"%2.3f %6d %6d %9ld %9ld\n",i*k, L_signal[i], R_signal[i], correlationl[i], correlationr[i]);
     }
     fclose(out);
 
-    out=fopen("/tmp/chirp.txt","w");
+    out=fopen("/tmp/chirp.txt","w");		// save chirp data to someone who want it
     for (i=0; i <= (chirp_size - 1); i++)
     {
         fprintf(out,"%6d %6d\n", i, chirp[i]);
@@ -356,6 +356,7 @@ int main(int argc, char *argv[])
 
     printf("Job done.\n");
 
+				//free all arrays 
     free(correlationl);
     free(correlationr);
     free(L_signal);
@@ -363,7 +364,7 @@ int main(int argc, char *argv[])
     free(chirp);
     free(signal);
 
-    snd_pcm_close(playback_handle);
+    snd_pcm_close(playback_handle);	// free driver handlers 
     snd_pcm_close(capture_handle);
     return 0;
 }
